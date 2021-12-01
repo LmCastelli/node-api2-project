@@ -36,22 +36,24 @@ router.get('/:id', (req, res) => {
         })
 })
 
-router.post('/', async (req, res) => {
-    try {
-        if(!req.body.title || !req.body.contents) {
-            res.status(400).json({ message: "Please provide title and contents for the post"})
-        } else {
-            const newPost =  await Posts.insert(req.body)
-            res.status(201).json
-            res.json(newPost)
-            
-            
-        }
-    } catch (err) {
-        res.status(500).json({
-            message: "There was an error while saving the post to the database",
-            error: err.message
-        })
+router.post('/', (req, res) => {
+    const { title, contents } = req.body;
+    if(!title || !contents) {
+        res.status(400).json({ message: "Please provide title and contents for the post"})
+    } else {
+        Posts.insert({title, contents })  
+            .then(({ id }) => {
+                return Posts.findById(id)
+            })
+            .then(post => {
+                res.status(201).json(post)
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: "There was an error while saving the post to the database",
+                    err: err.message,
+                })
+            }) 
     }
 })
 
@@ -102,7 +104,7 @@ router.get('/:id/comments', (req, res) => {
             }
         })
         .catch (err => {
-            res.status(500).json({ message: "The comments information could not be retrieved"})
+            res.status(500).json({ message: "The comments information could not be retrieved", error: err.message})
         })
 })
 
